@@ -1,0 +1,16 @@
+# Copier template configuration.
+# Docs: https://copier.readthedocs.io/en/stable/configuring/
+
+# --- Template settings (keys starting with "_") ---
+
+# Refuse to run with a Copier version older than the one this template is tested with.
+_min_copier_version: "9.19"
+
+# Only the content of template/ is copied into generated projects.
+_subdirectory: template
+
+# --- Questions ---
+
+project_name:
+  type: str
+  help: Project name (lowercase, words separated by hyphens, e.g. my-project)
