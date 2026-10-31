@@ -14,3 +14,9 @@ _subdirectory: template
 project_name:
   type: str
   help: Project name (lowercase, words separated by hyphens, e.g. my-project)
+
+# Computed: import name of the package (hyphens are not allowed in Python module names).
+package_name:
+  type: str
+  default: "{{ project_name | replace('-', '_') }}"
+  when: false
