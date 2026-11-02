@@ -1,0 +1,12 @@
+"""Tests for the entry point of {{ project_name }}."""
+
+import pytest
+
+from {{ package_name }} import main
+
+
+def test_main_prints_greeting(capsys: pytest.CaptureFixture[str]) -> None:
+    """Check that main() prints the greeting to standard output."""
+    main()
+    captured = capsys.readouterr()
+    assert captured.out == "Hello from {{ project_name }}!\n"
