@@ -83,15 +83,15 @@ to it directly: every change goes through a branch and a pull request.
   Commits type and `<subject>` is a short, lowercase, hyphenated
   description. The most common types are:
 
-  | Type       | Used for                                 | Example                  |
-  | ---------- | ---------------------------------------- | ------------------------ |
-  | `feat`     | A new feature                            | `feat/csv-export`        |
-  | `fix`      | A bug fix                                | `fix/date-parsing`       |
-  | `docs`     | Documentation only                       | `docs/usage-examples`    |
-  | `chore`    | Tooling and maintenance                  | `chore/update-tooling`   |
-  | `ci`       | Continuous integration                   | `ci/test-workflow`       |
-  | `refactor` | Code changes that do not alter behaviour | `refactor/config-loading`|
-  | `test`     | Adding or fixing tests                   | `test/parser-edge-cases` |
+  | Type       | Used for                                 | Example                   |
+  | ---------- | ---------------------------------------- | ------------------------- |
+  | `feat`     | A new feature                            | `feat/csv-export`         |
+  | `fix`      | A bug fix                                | `fix/date-parsing`        |
+  | `docs`     | Documentation only                       | `docs/usage-examples`     |
+  | `chore`    | Tooling and maintenance                  | `chore/update-tooling`    |
+  | `ci`       | Continuous integration                   | `ci/test-workflow`        |
+  | `refactor` | Code changes that do not alter behaviour | `refactor/config-loading` |
+  | `test`     | Adding or fixing tests                   | `test/parser-edge-cases`  |
 
   The commit message hook also accepts `build`, `perf`, `revert` and
   `style`.
@@ -145,9 +145,9 @@ The format is checked automatically: a pre-commit hook running at the
 
 ## Pull requests
 
-<!-- Customise: add a pull request template in
-`.github/pull_request_template.md`, or require a review from another
-contributor before merging. -->
+<!-- Customise: adapt the checklist in `.github/pull_request_template.md`
+to this project, or require a review from another contributor before
+merging. -->
 
 Every branch reaches `main` through a pull request, even when working
 alone: it gives each change a reviewable record, as if working in a team.
@@ -167,8 +167,9 @@ alone: it gives each change a reviewable record, as if working in a team.
 3. **Open the pull request** from the branch into `main`.
    - **Title:** a Conventional Commits message summarising the whole
      branch, for example `feat: add the csv export`.
-   - **Description:** what the branch changes, why, and how it was
-     tested.
+   - **Description:** GitHub pre-fills it from
+     `.github/pull_request_template.md`. Complete every section and tick
+     each item of the checklist only once it is actually true.
 
 4. **Review the changes** in the *Files changed* tab, as a reviewer would:
    read every line, look for leftovers (debug output, placeholder
