@@ -9,6 +9,22 @@ _min_copier_version: "9.19"
 # Only the content of template/ is copied into generated projects.
 _subdirectory: template
 
+# Message printed once the project is generated, listing the first commands to run.
+_message_after_copy: |
+  Project "{{ project_name }}" has been created.
+
+  Next steps:
+    1. Move into the project folder:
+         cd {{ _copier_conf.dst_path }}
+    2. Turn it into a Git repository whose first branch is main:
+         git init -b main
+    3. Install the dependencies, development tools included:
+         uv sync
+    4. Install the Git hooks (required once in every new repository and clone):
+         uv run pre-commit install
+
+  Read CONTRIBUTING.md for branches, commits, pull requests and merging.
+
 # --- Questions ---
 
 project_name:
