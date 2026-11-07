@@ -1,0 +1,230 @@
+# Contributing to {{ project_name }}
+
+> This file was generated from
+> [copier-python-template](https://github.com/JBaptisteAll/copier-python-template).
+> Every section can be adapted to the needs of this project. To keep future
+> `copier update` runs simple, prefer adding rules over rewriting the
+> original ones.
+
+This guide describes how changes reach the `main` branch: how the
+development environment is set up, how branches are named, how commits are
+written, how pull requests are reviewed and merged, and which rules keep
+secrets out of the repository. These rules are applied by discipline and by
+local tooling (pre-commit hooks), not by GitHub branch protection.
+
+## Getting started
+
+<!-- Customise: add any extra setup this project needs, for example
+environment variables to define in `.env` or services to start. -->
+
+The project uses [uv](https://docs.astral.sh/uv/) to manage Python and its
+dependencies, and [pre-commit](https://pre-commit.com/) to check every
+commit locally.
+
+1. **Get the repository.**
+
+   - Right after generating the project with Copier, turn its folder into
+     a Git repository whose first branch is `main`:
+
+     ```bash
+     git init -b main
+     ```
+
+   - To work on an existing repository, clone it and move into its folder:
+
+     ```bash
+     git clone <repository-url>
+     cd <repository-folder>
+     ```
+
+2. **Install the dependencies**, development tools included:
+
+   ```bash
+   uv sync
+   ```
+
+3. **Install the Git hooks.** Hooks are not stored in the repository, so
+   this step is required once in every new repository and every new clone:
+
+   ```bash
+   uv run pre-commit install
+   ```
+
+   It installs every hook declared in `.pre-commit-config.yaml`: the code
+   checks, run before each commit, and the commit message check. Without
+   this step, nothing is checked when committing.
+
+4. **Check the setup** by running every hook on every tracked file. In a
+   freshly generated project, track the files first with `git add .`:
+
+   ```bash
+   uv run pre-commit run --all-files
+   ```
+
+## Branches
+
+<!-- Customise: add branch types this project needs, or a naming rule
+such as prefixing the subject with an issue number (feat/42-csv-export). -->
+
+`main` always reflects a working state of the project. Nothing is committed
+to it directly: every change goes through a branch and a pull request.
+
+- **One branch per subject.** A branch carries a single change, so that its
+  pull request can be reviewed and understood on its own.
+- **Always start from an up-to-date `main`:**
+
+  ```bash
+  git switch main
+  git pull
+  git switch -c <type>/<subject>
+  ```
+
+- **Name branches `<type>/<subject>`**, where `<type>` is a Conventional
+  Commits type and `<subject>` is a short, lowercase, hyphenated
+  description. The most common types are:
+
+  | Type       | Used for                                 | Example                  |
+  | ---------- | ---------------------------------------- | ------------------------ |
+  | `feat`     | A new feature                            | `feat/csv-export`        |
+  | `fix`      | A bug fix                                | `fix/date-parsing`       |
+  | `docs`     | Documentation only                       | `docs/usage-examples`    |
+  | `chore`    | Tooling and maintenance                  | `chore/update-tooling`   |
+  | `ci`       | Continuous integration                   | `ci/test-workflow`       |
+  | `refactor` | Code changes that do not alter behaviour | `refactor/config-loading`|
+  | `test`     | Adding or fixing tests                   | `test/parser-edge-cases` |
+
+  The commit message hook also accepts `build`, `perf`, `revert` and
+  `style`.
+
+- **Delete the branch once merged.** The local branch is deleted by hand,
+  and `git fetch --prune` clears the outdated references to remote
+  branches:
+
+  ```bash
+  git branch -d <type>/<subject>
+  git fetch --prune
+  ```
+
+  On GitHub, enabling *Automatically delete head branches* in the
+  repository settings deletes the remote branch after each merge.
+  Otherwise, delete it with `git push origin --delete <type>/<subject>`.
+
+## Commit messages
+
+<!-- Customise: list the scopes this project uses, so that everyone picks
+the same names for the same parts of the code. -->
+
+Commit messages follow the
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+specification:
+
+    <type>(<optional scope>): <description>
+
+- **Type:** one of the types listed under *Branches* above.
+- **Scope (optional):** the part of the project affected, for example
+  `cli`, `config` or `tests`.
+- **Description:** in the imperative mood, lowercase, without a final
+  period, and short enough to keep the first line under 72 characters.
+  It completes the sentence "If applied, this commit will...".
+
+Examples:
+
+    feat(cli): add the export command
+    fix(config): read the output path from the environment
+    docs: add usage examples to the readme
+
+A **body** can follow after a blank line to explain *why* the change was
+made, when the description alone is not enough.
+
+Each commit holds one logical change. A commit may be amended
+(`git commit --amend`) only while it has not been pushed: rewriting a
+pushed commit would rewrite history that GitHub already holds.
+
+The format is checked automatically: a pre-commit hook running at the
+`commit-msg` stage rejects any message that does not follow it.
+
+## Pull requests
+
+<!-- Customise: add a pull request template in
+`.github/pull_request_template.md`, or require a review from another
+contributor before merging. -->
+
+Every branch reaches `main` through a pull request, even when working
+alone: it gives each change a reviewable record, as if working in a team.
+
+1. **Check the branch locally** before sharing it. Every test and every
+   hook must pass:
+
+       uv run pytest
+       uv run pre-commit run --all-files
+
+2. **Push the branch.** The first push links it to GitHub:
+
+       git push -u origin <type>/<subject>
+
+   Later pushes only need `git push`.
+
+3. **Open the pull request** from the branch into `main`.
+   - **Title:** a Conventional Commits message summarising the whole
+     branch, for example `feat: add the csv export`.
+   - **Description:** what the branch changes, why, and how it was
+     tested.
+
+4. **Review the changes** in the *Files changed* tab, as a reviewer would:
+   read every line, look for leftovers (debug output, placeholder
+   comments, unused code) and for anything listed under
+   *Data protection rules* below.
+
+5. **Merge only once every check passes.** If something fails, fix it
+   with new commits on the same branch and push again.
+
+## Merging
+
+<!-- Customise: a project with many small pull requests may prefer
+squash merges; update this section and the repository settings together. -->
+
+Pull requests are merged with **Create a merge commit**, never squashed
+or rebased.
+
+- **Why:** every commit of the branch is kept as it was written, so the
+  history shows how each change was built, commit by commit. The merge
+  commit itself marks where a change ends, which keeps the history easy
+  to read and makes a whole change easy to revert if needed.
+- **One line per pull request:** the full history can be long, but
+  following only the first parent of each merge gives one line per merged
+  pull request:
+
+      git log --first-parent --oneline main
+
+- **Enforce it on GitHub:** in the repository settings, under
+  *Pull Requests*, leave only *Allow merge commits* enabled, so that the
+  other merge methods cannot be chosen by mistake.
+
+After the merge:
+
+1. Bring the local `main` up to date:
+
+       git switch main
+       git pull
+
+2. Delete the branch, as described under *Branches*.
+
+## Data protection rules
+
+<!-- Customise: add the rules this project's data calls for, for example
+where real input files are kept, or how test data must be anonymised. -->
+
+The repository holds code, never secrets or real data. These rules apply
+from the first commit, so that the repository can be made public at any
+time without any clean-up.
+
+1. **No secrets in the repository.** Connection strings, tokens and API
+   keys live in `.env`, which Git ignores. A pre-commit hook running
+   gitleaks blocks any commit that contains a secret. If a secret is ever
+   committed, deleting it in a new commit is not enough, since it remains
+   in the history: revoke it and generate a new one immediately.
+2. **Invented test data only.** Tests and fixtures never reuse real data,
+   even partially.
+
+Before the repository is made public, its whole history is scanned for
+secrets, not only its current files.
