@@ -1,0 +1,20 @@
+{
+  "id": "p_python_template",
+  "order": 100,
+  "label": "PYTHON_TEMPLATE",
+  "kanji": "型",
+  "year": "2026",
+  "title_fr": "Copier Python Template",
+  "title_en": "Copier Python Template",
+  "summary_fr": "Template de repo Python avec toute la partie Ops déjà configurée (pytest, Ruff, Dependabot, nbstripout, pre-commit), réutilisable sur chaque nouveau projet grâce à Copier.",
+  "summary_en": "Python repository template with all the Ops tooling preconfigured (pytest, Ruff, Dependabot, nbstripout, pre-commit), reusable on every new project through Copier.",
+  "body_fr": "Le problème : à chaque nouveau projet, je reconfigurais à la main les mêmes outils de qualité, avec des oublis et des écarts d'un repo à l'autre.\n\nLa solution : un template de repo généré avec **Copier**. Il embarque toute la partie Ops : tests avec pytest, lint et formatage avec Ruff, mises à jour de dépendances avec Dependabot, nettoyage des notebooks avec nbstripout et hooks pre-commit.\n\nRésultat : un nouveau projet démarre avec les mêmes standards que les précédents, sans y repenser.",
+  "body_en": "The problem: for every new project, I was reconfiguring the same quality tools by hand, with omissions and drift from one repo to the next.\n\nThe solution: a repository template generated with **Copier**. It ships all the Ops tooling: tests with pytest, linting and formatting with Ruff, dependency updates with Dependabot, notebook cleaning with nbstripout and pre-commit hooks.\n\nResult: a new project starts with the same standards as the previous ones, without having to think about it.",
+  "metrics": [
+    { "label": "générateur", "value": "Copier" },
+    { "label": "tests", "value": "pytest" },
+    { "label": "lint", "value": "Ruff" }
+  ],
+  "mermaid": "flowchart LR\n  T[Template Copier] --> N[Nouveau repo]\n  N --> P[pytest]\n  N --> R[Ruff]\n  N --> D[Dependabot]\n  N --> H[pre-commit + nbstripout]",
+  "bot_description": "Template de repo Python généré avec Copier, avec toute la partie Ops préconfigurée (pytest, Ruff, Dependabot, nbstripout, pre-commit), pour démarrer chaque nouveau projet avec les mêmes standards."
+}
