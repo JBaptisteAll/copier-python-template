@@ -25,3 +25,4 @@ the steps to check the new behaviour by hand. -->
 - [ ] Documentation is up to date (README, CONTRIBUTING.md)
 - [ ] Every line has been reviewed in the *Files changed* tab
 - [ ] The data protection rules are respected (no secrets, no real data)
+- [ ] The CI is green (`quality` and `secrets` jobs)

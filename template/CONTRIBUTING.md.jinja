@@ -9,9 +9,9 @@
 This guide describes how changes reach the `main` branch: how the
 development environment is set up, how branches are named, how commits are
 written, how pull requests are reviewed and merged, how dependency updates
-are handled, and which rules keep secrets out of the repository.
-These rules are applied by discipline and bylocal tooling (pre-commit hooks),
-not by GitHub branch protection.
+are handled, and which rules keep secrets out of the repository. These
+rules are applied by discipline, by local tooling (pre-commit hooks) and by
+the CI, not by GitHub branch protection.
 
 ## Getting started
 
@@ -147,8 +147,8 @@ The format is checked automatically: a pre-commit hook running at the
 ## Pull requests
 
 <!-- Customise: adapt the checklist in `.github/pull_request_template.md`
-to this project, or require a review from another contributor before
-merging. -->
+to this project, require a review from another contributor before
+merging, or protect `main` with a ruleset that requires the CI to pass. -->
 
 Every branch reaches `main` through a pull request, even when working
 alone: it gives each change a reviewable record, as if working in a team.
@@ -177,8 +177,16 @@ alone: it gives each change a reviewable record, as if working in a team.
    comments, unused code) and for anything listed under
    *Data protection rules* below.
 
-5. **Merge only once every check passes.** If something fails, fix it
-   with new commits on the same branch and push again.
+5. **Wait for the CI to pass.** Every pull request runs the workflow
+   in `.github/workflows/ci.yml`, whose two jobs show in the *Checks* tab:
+   `quality` (dependencies, hooks, tests) and `secrets` (a gitleaks scan
+   of the whole history). Without branch protection, GitHub would allow
+   merging a pull request whose checks failed. The rule is therefore
+   personal: **never merge while a check is red or still running.**
+
+6. **If a check fails**, open its log in the *Checks* tab to find the
+   failing step, reproduce it locally with the commands of step 1, then
+   fix it with new commits on the same branch and push again.
 
 ## Merging
 
@@ -279,6 +287,11 @@ time without any clean-up.
    in the history: revoke it and generate a new one immediately.
 2. **Invented test data only.** Tests and fixtures never reuse real data,
    even partially.
+3. **Silent CI logs.** On a public repository, GitHub Actions logs are
+   public. Workflows never print secrets, environment variables or values
+   taken from real data. For the same reason, the `secrets` job runs
+   gitleaks with `--redact`, so that a detected secret is masked in its
+   log.
 
 Before the repository is made public, its whole history is scanned for
 secrets, not only its current files.
