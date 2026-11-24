@@ -62,6 +62,10 @@ commit locally.
    uv run pre-commit run --all-files
    ```
 
+   The secrets hook only checks staged changes: in a clone, where nothing
+   is staged, it checks nothing. Secrets already in the history are
+   covered under *Data protection rules*.
+
 ## Branches
 
 <!-- Customise: add branch types this project needs, or a naming rule
@@ -320,5 +324,13 @@ time without any clean-up.
    gitleaks with `--redact`, so that a detected secret is masked in its
    log.
 
-Before the repository is made public, its whole history is scanned for
-secrets, not only its current files.
+The gitleaks hook only checks the changes being committed: it does not see
+a secret that is already in the history, even with
+`pre-commit run --all-files`. The `secrets` job of the CI covers that gap
+by scanning the whole history on every pull request and every push to
+`main`. To run the same scan locally, for example before making the
+repository public,
+[install gitleaks](https://github.com/gitleaks/gitleaks#installing) and
+run, from the repository root:
+
+    gitleaks git --redact
