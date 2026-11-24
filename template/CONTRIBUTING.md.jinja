@@ -8,9 +8,10 @@
 
 This guide describes how changes reach the `main` branch: how the
 development environment is set up, how branches are named, how commits are
-written, how pull requests are reviewed and merged, and which rules keep
-secrets out of the repository. These rules are applied by discipline and by
-local tooling (pre-commit hooks), not by GitHub branch protection.
+written, how pull requests are reviewed and merged, how dependency updates
+are handled, and which rules keep secrets out of the repository. These
+rules are applied by discipline, by local tooling (pre-commit hooks) and by
+the CI, not by GitHub branch protection.
 
 ## Getting started
 
@@ -60,6 +61,10 @@ commit locally.
    ```bash
    uv run pre-commit run --all-files
    ```
+
+   The secrets hook only checks staged changes: in a clone, where nothing
+   is staged, it checks nothing. Secrets already in the history are
+   covered under *Data protection rules*.
 
 ## Branches
 
@@ -146,8 +151,8 @@ The format is checked automatically: a pre-commit hook running at the
 ## Pull requests
 
 <!-- Customise: adapt the checklist in `.github/pull_request_template.md`
-to this project, or require a review from another contributor before
-merging. -->
+to this project, require a review from another contributor before
+merging, or protect `main` with a ruleset that requires the CI to pass. -->
 
 Every branch reaches `main` through a pull request, even when working
 alone: it gives each change a reviewable record, as if working in a team.
@@ -176,8 +181,16 @@ alone: it gives each change a reviewable record, as if working in a team.
    comments, unused code) and for anything listed under
    *Data protection rules* below.
 
-5. **Merge only once every check passes.** If something fails, fix it
-   with new commits on the same branch and push again.
+5. **Wait for the CI to pass.** Every pull request runs the workflow
+   in `.github/workflows/ci.yml`, whose two jobs show in the *Checks* tab:
+   `quality` (dependencies, hooks, tests) and `secrets` (a gitleaks scan
+   of the whole history). Without branch protection, GitHub would allow
+   merging a pull request whose checks failed. The rule is therefore
+   personal: **never merge while a check is red or still running.**
+
+6. **If a check fails**, open its log in the *Checks* tab to find the
+   failing step, reproduce it locally with the commands of step 1, then
+   fix it with new commits on the same branch and push again.
 
 ## Merging
 
@@ -210,6 +223,85 @@ After the merge:
 
 2. Delete the branch, as described under *Branches*.
 
+## Dependency updates
+
+<!-- Customise: change the schedule or the groups in
+`.github/dependabot.yml`, and list here any dependency that must be
+updated by hand. -->
+
+[Dependabot](https://docs.github.com/en/code-security/dependabot) keeps the
+dependencies up to date. Once a month, it opens pull requests for three
+ecosystems, each grouped into a single pull request:
+
+| Ecosystem      | What it updates                                | Title prefix |
+| -------------- | ---------------------------------------------- | ------------ |
+| GitHub Actions | The actions used in `.github/workflows/`       | `ci`         |
+| uv             | The Python dependencies and `uv.lock`          | `chore`      |
+| pre-commit     | The hook versions in `.pre-commit-config.yaml` | `chore`      |
+
+This monthly schedule only applies to version updates. Security updates
+are a separate feature: once *Dependabot security updates* is enabled in
+the repository settings, under *Code security*, Dependabot opens a pull
+request as soon as a known vulnerability affects a dependency, without
+waiting for the schedule.
+
+A Dependabot pull request follows the same path as any other: review every
+line in the *Files changed* tab, wait for every check to pass, then merge
+it with a merge commit. Two more rules apply to every update:
+
+- **Read the release notes** of every updated dependency, linked in the
+  pull request description, looking for breaking changes, deprecations and
+  new requirements. A green CI only shows that nothing breaks today: an
+  update is merged only once it is understood.
+- **Update the local environment** after pulling `main`, so that the
+  installed packages match `uv.lock` again:
+
+  ```bash
+  uv sync --locked
+  ```
+
+Two dependencies need more than that.
+
+1. **Ruff is pinned in two places**, the `rev` of its hook in
+   `.pre-commit-config.yaml` and the `ruff==` line of the `dev` group in
+   `pyproject.toml`, so that the hook and `uv run ruff` always apply the
+   same rules. The two files belong to different ecosystems, so a new Ruff
+   release arrives as two separate pull requests. Merge them together, then
+   check on `main` that both places show the same version:
+
+   ```bash
+   uv run ruff --version
+   ```
+
+   If only one of them arrives, update the other file by hand in a branch
+   of its own, rather than leaving the versions apart.
+
+2. **gitleaks is pinned in two places too**: the `rev` of its hook, which
+   Dependabot updates, and the `GITLEAKS_VERSION` and `GITLEAKS_SHA256`
+   variables of the `secrets` job in `.github/workflows/ci.yml`, which it
+   does not. When a pull request updates the gitleaks hook, align the job
+   in that same pull request, so that both places always change together:
+
+   - set `GITLEAKS_VERSION` to the new version, without the leading `v`;
+   - set `GITLEAKS_SHA256` to the checksum of the
+     `gitleaks_<version>_linux_x64.tar.gz` archive, copied from the
+     `gitleaks_<version>_checksums.txt` file of the official release on
+     [GitHub](https://github.com/gitleaks/gitleaks/releases), never from
+     another source;
+   - commit the change on the Dependabot branch and push it:
+
+     ```bash
+     git fetch --prune
+     git switch <dependabot-branch>
+     git commit -am "ci: align gitleaks in the secrets job"
+     git push
+     ```
+
+   The CI of the pull request then checks the new values: a wrong checksum
+   makes the `secrets` job fail before gitleaks runs. Once someone else
+   has pushed to its branch, Dependabot no longer updates it, so merge
+   this pull request without waiting.
+
 ## Data protection rules
 
 <!-- Customise: add the rules this project's data calls for, for example
@@ -226,6 +318,19 @@ time without any clean-up.
    in the history: revoke it and generate a new one immediately.
 2. **Invented test data only.** Tests and fixtures never reuse real data,
    even partially.
+3. **Silent CI logs.** On a public repository, GitHub Actions logs are
+   public. Workflows never print secrets, environment variables or values
+   taken from real data. For the same reason, the `secrets` job runs
+   gitleaks with `--redact`, so that a detected secret is masked in its
+   log.
 
-Before the repository is made public, its whole history is scanned for
-secrets, not only its current files.
+The gitleaks hook only checks the changes being committed: it does not see
+a secret that is already in the history, even with
+`pre-commit run --all-files`. The `secrets` job of the CI covers that gap
+by scanning the whole history on every pull request and every push to
+`main`. To run the same scan locally, for example before making the
+repository public,
+[install gitleaks](https://github.com/gitleaks/gitleaks#installing) and
+run, from the repository root:
+
+    gitleaks git --redact
