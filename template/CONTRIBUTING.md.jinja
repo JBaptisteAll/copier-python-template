@@ -241,6 +241,23 @@ the repository settings, under *Code security*, Dependabot opens a pull
 request as soon as a known vulnerability affects a dependency, without
 waiting for the schedule.
 
+A Dependabot pull request follows the same path as any other: review every
+line in the *Files changed* tab, wait for every check to pass, then merge
+it with a merge commit. Two more rules apply to every update:
+
+- **Read the release notes** of every updated dependency, linked in the
+  pull request description, looking for breaking changes, deprecations and
+  new requirements. A green CI only shows that nothing breaks today: an
+  update is merged only once it is understood.
+- **Update the local environment** after pulling `main`, so that the
+  installed packages match `uv.lock` again:
+
+  ```bash
+  uv sync --locked
+  ```
+
+Two dependencies need more than that.
+
 1. **Ruff is pinned in two places**, the `rev` of its hook in
    `.pre-commit-config.yaml` and the `ruff==` line of the `dev` group in
    `pyproject.toml`, so that the hook and `uv run ruff` always apply the
@@ -259,17 +276,27 @@ waiting for the schedule.
    Dependabot updates, and the `GITLEAKS_VERSION` and `GITLEAKS_SHA256`
    variables of the `secrets` job in `.github/workflows/ci.yml`, which it
    does not. When a pull request updates the gitleaks hook, align the job
-   in a follow-up branch:
+   in that same pull request, so that both places always change together:
 
    - set `GITLEAKS_VERSION` to the new version, without the leading `v`;
    - set `GITLEAKS_SHA256` to the checksum of the
      `gitleaks_<version>_linux_x64.tar.gz` archive, copied from the
      `gitleaks_<version>_checksums.txt` file of the official release on
      [GitHub](https://github.com/gitleaks/gitleaks/releases), never from
-     another source.
+     another source;
+   - commit the change on the Dependabot branch and push it:
 
-   A wrong checksum makes the `secrets` job fail before gitleaks runs, so
-   the CI shows at once when the two values do not match.
+     ```bash
+     git fetch --prune
+     git switch <dependabot-branch>
+     git commit -am "ci: align gitleaks in the secrets job"
+     git push
+     ```
+
+   The CI of the pull request then checks the new values: a wrong checksum
+   makes the `secrets` job fail before gitleaks runs. Once someone else
+   has pushed to its branch, Dependabot no longer updates it, so merge
+   this pull request without waiting.
 
 ## Data protection rules
 
